@@ -1,0 +1,22 @@
+# Ignore everything by default: this folder also contains the SWAT 4 SDK
+# source, copies of the retail game packages (SystemConform), your server
+# configuration and logs, none of which belong in the repository.
+*
+!*/
+
+# Repository files
+!.gitignore
+!.gitattributes
+!README.md
+!README.txt
+
+# Build and launch scripts
+!CompileLagCompensation.bat
+!LaunchLagCompensation.bat
+!LaunchLagCompensationServer.bat
+
+# The mod's own source code
+!Source/Game/LagCompensation/Classes/*
+!Source/Game/SwatEquipment/Classes/LagCompensation/*
+!Source/Game/SwatEquipment/Classes/Bases/ClipBasedWeapon.uc
+!Source/Game/SwatEquipment/Classes/Bases/RoundBasedWeapon.uc

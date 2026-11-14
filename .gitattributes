@@ -1,2 +1,6 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# UCC and cmd.exe expect Windows line endings
+*.uc   text eol=crlf
+*.upkg text eol=crlf
+*.bat  text eol=crlf
+*.txt  text eol=crlf
+*.md   text eol=lf
