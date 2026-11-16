@@ -75,6 +75,9 @@ mod), the stock `BallisticFire()` runs unchanged.
 
 ## Installation
 
+Already running an older version? See
+[Upgrading from an older version](#upgrading-from-an-older-version).
+
 ### Option A - run from the mod folder (recommended)
 
 1. Create a `LagCompensation` folder inside your SWAT 4 folder, next to
@@ -116,13 +119,46 @@ The server log (`Swat4DedicatedServer.log`) should contain, on every map load:
 Log: Spawning: LagCompensation.LagCompensationManager
 ```
 
-The mod's own messages (`LagCompensation: enabled=True ...` and the
+The mod's own messages (`LagCompensation 1.0.2: enabled=True ...` and the
 `bLogShots` output) are script logs, which SWAT 4 hides by default. To see them,
 comment out this line in `[Core.System]` of the server ini:
 
 ```ini
 ;Suppress=ScriptLog
 ```
+
+## Upgrading from an older version
+
+Only the server is updated; players don't need to do anything. Your server ini
+and its settings are kept, since the release contains no `.ini` files.
+
+1. Stop the server.
+2. Open the folder that has the mod's `.u` files: `LagCompensation\System\`
+   (Option A) or `Content\System\` (Option B).
+3. Save a copy of the old `LagCompensation.u`, so you can roll back. If you
+   used Option B, leave the backup of the original `SwatEquipment.u` you made
+   when installing as it is: you need it to uninstall.
+4. Copy the new files from the release into that folder:
+   - **From 1.0.1:** only `LagCompensation.u`. `SwatEquipment.u` has not
+     changed since 1.0.1.
+   - **From 1.0.0:** `LagCompensation.u` and `SwatEquipment.u`. Then move the
+     settings from `LagCompensation.ini` into the
+     `[LagCompensation.LagCompensationManager]` section of the server ini and
+     delete `LagCompensation.ini`. While that file exists, unmodified clients
+     can't connect ("unexpected number of configuration files").
+5. Start the server and [check that it is running](#check-that-it-is-running).
+   With script logs enabled, the startup line shows the version:
+   `LagCompensation 1.0.2: enabled=True rotation=True ...` (1.0.1 printed
+   `LagCompensation: enabled=True ...`, without a version).
+
+The new settings are optional; missing keys use the defaults listed in
+[Server configuration](#server-configuration). 1.0.2 adds `bCompensateRotation`
+(on by default) and `bLogPoseChangesOnly`. To keep the 1.0.1 behavior, add
+`bCompensateRotation=False` to the `[LagCompensation.LagCompensationManager]`
+section.
+
+To go back to 1.0.1, stop the server and put the old `LagCompensation.u` back.
+1.0.1 ignores the settings added for 1.0.2.
 
 ## Server configuration
 
@@ -208,7 +244,8 @@ can make movement feel laggy even at low ping:
 
 - Server, `[IpDrv.TcpNetDriver]`: set `MaxInternetClientRate=32000`. Without it,
   players connecting by IP can be capped at about 7,000 bytes/s.
-- Client, `Swat4.ini`: `[Engine.Player] ConfiguredInternetSpeed=32000`.
+- Client, `Swat4.ini`: `[Engine.Player] ConfiguredInternetSpeed=32000` and
+  `[Engine.LevelInfo] bCapFramerate=True`.
 
 ## Building from source
 
