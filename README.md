@@ -141,11 +141,6 @@ and its settings are kept, since the release contains no `.ini` files.
 4. Copy the new files from the release into that folder:
    - **From 1.0.1:** only `LagCompensation.u`. `SwatEquipment.u` has not
      changed since 1.0.1.
-   - **From 1.0.0:** `LagCompensation.u` and `SwatEquipment.u`. Then move the
-     settings from `LagCompensation.ini` into the
-     `[LagCompensation.LagCompensationManager]` section of the server ini and
-     delete `LagCompensation.ini`. While that file exists, unmodified clients
-     can't connect ("unexpected number of configuration files").
 5. Start the server and [check that it is running](#check-that-it-is-running).
    With script logs enabled, the startup line shows the version:
    `LagCompensation 1.0.2: enabled=True rotation=True ...` (1.0.1 printed
