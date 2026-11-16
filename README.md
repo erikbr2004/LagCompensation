@@ -208,8 +208,7 @@ can make movement feel laggy even at low ping:
 
 - Server, `[IpDrv.TcpNetDriver]`: set `MaxInternetClientRate=32000`. Without it,
   players connecting by IP can be capped at about 7,000 bytes/s.
-- Client, `Swat4.ini`: `[Engine.Player] ConfiguredInternetSpeed=32000` and
-  `[Engine.LevelInfo] bCapFramerate=True`.
+- Client, `Swat4.ini`: `[Engine.Player] ConfiguredInternetSpeed=32000`.
 
 ## Building from source
 
