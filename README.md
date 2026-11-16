@@ -4,7 +4,7 @@ Server-side lag compensation for **SWAT 4 (base game, v1.1)** multiplayer.
 Players do **not** need to install anything: unmodified clients can join a server
 running this mod.
 
-Version **1.0.1**
+Version **1.0.2**
 
 ---
 
@@ -28,14 +28,17 @@ the hit is registered.
 ## How it works
 
 1. `LagCompensationManager` (package `LagCompensation`, server only) records the
-   position of every player about 100 times per second (64 samples per player).
+   position, body rotation (yaw) and crouch/lean state of every player about 100
+   times per second (64 samples per player).
 2. The weapon base classes `SwatEquipment.ClipBasedWeapon` and
    `SwatEquipment.RoundBasedWeapon` route `BallisticFire()` through a small hook,
    `SwatEquipment.LagCompensationHook`.
-3. For every target that moved since the shot time, the bullet ray is shifted by
-   the target's displacement and traced against the target's current body. This
-   is equivalent to shooting at the past position, but **no actor is ever
-   moved**, so there are no side effects on physics, volumes or triggers.
+3. For every target that moved or turned since the shot time, the bullet ray is
+   carried by the same rigid transform the target's body went through
+   (translation plus rotation around the target) and traced against the
+   target's current body. This is equivalent to shooting at the past position
+   and orientation, but **no actor is ever moved**, so there are no side effects
+   on physics, volumes or triggers.
 4. The world is still traced with the original ray, so walls keep blocking
    bullets and penetration keeps working.
 5. All impacts are sorted along the original ray and handed to the stock
@@ -144,7 +147,9 @@ In `Swat4DedicatedServer.ini` (or `Swat4.ini` for a non-dedicated server):
    SampleInterval=0.01
    TeleportDistance=512
    bCompensateAI=True
+   bCompensateRotation=True
    bLogShots=False
+   bLogPoseChangesOnly=False
    ```
 
 | Setting | Default | Description |
@@ -158,7 +163,11 @@ In `Swat4DedicatedServer.ini` (or `Swat4.ini` for a non-dedicated server):
 | `SampleInterval` | `0.01` | Seconds between position samples. History length = 64 x this value. |
 | `TeleportDistance` | `512` | A position jump larger than this (Unreal units) resets a player's history (respawns). |
 | `bCompensateAI` | `True` | Also compensates AI pawns (COOP suspects and civilians). |
-| `bLogShots` | `False` | Logs every compensated hit to the server log, for tuning (requires `Suppress=ScriptLog` to be commented out). |
+| `bCompensateRotation` | `True` | Also rewinds the target's body rotation (yaw). `False` behaves like 1.0.1 (position only). |
+| `bLogShots` | `False` | Logs compensated hits to the server log, for tuning (requires `Suppress=ScriptLog` to be commented out). |
+| `bLogPoseChangesOnly` | `False` | With `bLogShots`, only logs hits on targets whose crouch/lean state changed within the rewind window. |
+
+All settings are optional; missing keys use the defaults above.
 
 ### Tuning
 
@@ -166,6 +175,31 @@ Enable `bLogShots` and test with a high-ping player shooting a running target.
 If shots still need to be led ahead of the target, increase `ExtraRewindTime`
 (for example `0.03` to `0.05`). If odd hits register behind the target, lower
 `PingScale`.
+
+### Measuring pose changes
+
+Crouch and lean are **not** rewound (see [Known limitations](#known-limitations)),
+but they are recorded, so you can measure how often they matter. With `bLogShots`
+enabled, every time a compensated bullet reaches its target the server logs a
+line like:
+
+```
+LagCompensation: hit Shooter -> Target rewound 120ms, moved 35uu, turned 12deg, pose standing -> standing [pose changed 3/57]
+LagCompensation: POSE CHANGED Shooter -> Target rewound 140ms, moved 18uu, turned 3deg, pose standing -> crouched [pose changed 4/58]
+```
+
+- `POSE CHANGED` marks hits where the target's crouch/lean state at any moment
+  between the shot time and now differs from its current state, i.e. hits whose
+  hitboxes may not match what the shooter saw.
+- `[pose changed X/Y]` is the running count for the current map: X of the Y
+  compensated hits were on a target whose pose changed.
+- Every 100 compensated hits a summary line with the percentage is logged.
+- Set `bLogPoseChangesOnly=True` to log only the `POSE CHANGED` lines (the
+  summary is still logged).
+
+Counts are per bullet (each shotgun pellet counts) and reset on every map load.
+If the percentage stays low on your server, pose compensation would rarely
+change a result.
 
 ### Network settings worth checking
 
@@ -235,13 +269,34 @@ the release archive, not in the repository.
 
 ## Known limitations
 
-- Only the target's **position** is rewound, not its pose (crouch, lean) or body
-  rotation.
+- The target's position and body rotation are rewound, but not its animation
+  pose: crouch, lean and where the upper body is aiming. Crouch and lean are
+  measured instead (see [Measuring pose changes](#measuring-pose-changes)).
 - Taser, pepper spray, the pepperball launcher and grenades use their own logic
   and are not compensated.
 - AI shooters and the host of a non-dedicated server have no latency, so they
   are not compensated (they do not need it).
 - Base game only; The Stetchkov Syndicate is not supported.
+
+## Changelog
+
+### 1.0.2
+- Body rotation (yaw) is now rewound together with the position
+  (`bCompensateRotation`).
+- Crouch/lean state is recorded; hits on targets whose pose changed within the
+  rewind window are counted and logged (`bLogShots`, `bLogPoseChangesOnly`).
+- Hit logging now happens when the bullet actually reaches the target, after
+  walls and other obstacles have been resolved.
+- `SwatEquipment.u` is unchanged from 1.0.1. Upgrading only requires replacing
+  `LagCompensation.u`; the new settings are optional.
+
+### 1.0.1
+- Settings moved into `Swat4DedicatedServer.ini` / `Swat4.ini`. A separate
+  `.ini` file made unmodified clients fail to connect ("unexpected number of
+  configuration files").
+
+### 1.0.0
+- First release: position-based lag compensation.
 
 ## Credits and license
 
